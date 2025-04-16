@@ -5,6 +5,8 @@ import subprocess
 import sys
 import shlex
 from collections import Counter
+from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ----------------------------------
 # PARAMETERS
@@ -116,30 +118,66 @@ def process_single_file(file):
 
 
 def compute_blame_stats(files):
-    """Compute blame statistics on the list of files and update progress periodically."""
+    """
+    Compute blame statistics on the list of files sequentially and update progress periodically.
+    """
     total_files = len(files)
     if total_files == 0:
         print("No files to process.")
         return
 
-    overall_lines = Counter()      # Total committed lines per author.
-    overall_touched = Counter()    # Number of files each author participated in.
-    overall_not_committed = 0      # Total 'Not Committed Yet' lines.
-    files_scanned = 0
+    overall_lines        = Counter()   # Total committed lines per author.
+    overall_touched      = Counter()   # Number of files each author participated in.
+    overall_not_committed = 0          # Total 'Not Committed Yet' lines.
+    files_scanned        = 0
 
     for file in files:
-        files_scanned += 1
         file_counter, touched, not_committed = process_single_file(file)
+        files_scanned += 1
         overall_lines.update(file_counter)
         for author in touched:
             overall_touched[author] += 1
         overall_not_committed += not_committed
-
         if files_scanned % UPDATE_INTERVAL == 0 or files_scanned == total_files:
             print_progress(file, files_scanned, total_files, overall_lines, overall_touched, overall_not_committed)
 
+    # Final update if not printed on the last interval
     if files_scanned % UPDATE_INTERVAL != 0:
-        print_progress(file, files_scanned, total_files, overall_lines, overall_touched, overall_not_committed)
+        last_file = files[-1] if files else ""
+        print_progress(last_file, files_scanned, total_files, overall_lines, overall_touched, overall_not_committed)
+
+
+def compute_blame_stats_parallel(files):
+    """
+    Compute blame statistics on the list of files in parallel and update progress periodically.
+    """
+    total_files = len(files)
+    if total_files == 0:
+        print("No files to process.")
+        return
+
+    overall_lines        = Counter()   # Total committed lines per author.
+    overall_touched      = Counter()   # Number of files each author participated in.
+    overall_not_committed = 0          # Total 'Not Committed Yet' lines.
+    files_scanned        = 0
+
+    with ThreadPoolExecutor() as executor:
+        future_to_file = {executor.submit(process_single_file, f): f for f in files}
+        for future in as_completed(future_to_file):
+            file_counter, touched, not_committed = future.result()
+            current_file = future_to_file[future]
+            files_scanned += 1
+            overall_lines.update(file_counter)
+            for author in touched:
+                overall_touched[author] += 1
+            overall_not_committed += not_committed
+            if files_scanned % UPDATE_INTERVAL == 0 or files_scanned == total_files:
+                print_progress(current_file, files_scanned, total_files, overall_lines, overall_touched, overall_not_committed)
+
+    # Final update if not printed on the last interval
+    if files_scanned % UPDATE_INTERVAL != 0:
+        last_file = files[-1] if files else ""
+        print_progress(last_file, files_scanned, total_files, overall_lines, overall_touched, overall_not_committed)
 
 
 # ----------------------------------
@@ -196,6 +234,7 @@ def parse_args():
     - --ignore (-i): Optional list of file extension patterns to ignore.
     - --root (-r): Optionally override the repository root.
     - --list (-l): List all files that would be processed and exit.
+    - --parallel (-p): Process files using the parallel method.
     """
     parser = argparse.ArgumentParser(
         description="Compute Git blame statistics for a Git repository."
@@ -227,6 +266,11 @@ def parse_args():
         "-l", "--list",
         action="store_true",
         help="List all files that would be processed and exit."
+    )
+    parser.add_argument(
+        "-p", "--parallel",
+        action="store_true",
+        help="Process files using the parallel method."
     )
     return parser.parse_args()
 
@@ -260,7 +304,10 @@ def main():
             print(f)
         sys.exit(0)
 
-    compute_blame_stats(list(files_to_process))
+    if args.parallel:
+        compute_blame_stats_parallel(list(files_to_process))
+    else:
+        compute_blame_stats(list(files_to_process))
 
 
 if __name__ == "__main__":
