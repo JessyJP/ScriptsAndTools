@@ -5,7 +5,6 @@ import subprocess
 import sys
 import shlex
 from collections import Counter
-from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ----------------------------------
