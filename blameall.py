@@ -83,10 +83,7 @@ def get_blame_for_file(file):
         blame_cmd = f"git blame -w HEAD --line-porcelain {shlex.quote(rel_file)}"
 
     try:
-        output = subprocess.check_output(
-            blame_cmd, shell=True, encoding="utf-8", errors="replace"
-        )
-        return output
+        return subprocess.check_output(blame_cmd, shell=True, encoding="utf-8", errors="replace")
     except subprocess.CalledProcessError:
         print(f"Warning: Could not process file {file}. Skipping.")
         return ""
@@ -147,10 +144,8 @@ def compute_blame_stats(files):
         print_progress(last_file, files_scanned, total_files, overall_lines, overall_touched, overall_not_committed)
 
 
-def compute_blame_stats_parallel(files):
-    """
-    Compute blame statistics on the list of files in parallel and update progress periodically.
-    """
+def compute_blame_stats_parallel(files, max_workers):
+    """Compute blame statistics in parallel with *max_workers* threads."""
     total_files = len(files)
     if total_files == 0:
         print("No files to process.")
@@ -161,7 +156,7 @@ def compute_blame_stats_parallel(files):
     overall_not_committed = 0          # Total 'Not Committed Yet' lines.
     files_scanned        = 0
 
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_file = {executor.submit(process_single_file, f): f for f in files}
         for future in as_completed(future_to_file):
             file_counter, touched, not_committed = future.result()
@@ -200,14 +195,14 @@ def print_progress(current_file, files_scanned, total_files, overall_lines, over
     print("# Git Blame Statistics Application v3.0")
     print("# Temporary progress update (replaceable output):\n")
 
-    pct = (files_scanned / total_files) * 100 if total_files > 0 else 0
+    pct = (files_scanned / total_files) * 100 if total_files else 0
     print(f"Scanned {files_scanned} of {total_files} files ({pct:>6.2f}% completed).")
     print(f"Currently processing file: {current_file}\n")
 
     print(f"Not Committed Yet lines: {overall_not_committed}\n")
 
     total_committed = sum(overall_lines.values())
-    if total_committed > 0:
+    if total_committed:
         print(f"{'Author':<30} {'Lines':>8} {'Touched':>8} {'Percentage':>12}")
         print("-" * 60)
         # Display each author (sorted by line count in descending order)
@@ -304,10 +299,11 @@ def main():
             print(f)
         sys.exit(0)
 
-    if args.parallel:
-        compute_blame_stats_parallel(list(files_to_process))
-    else:
+    if args.parallel is None:
         compute_blame_stats(list(files_to_process))
+    else:
+        max_workers = args.parallel if args.parallel > 0 else ((os.cpu_count() or 4) * 2)
+        compute_blame_stats_parallel(list(files_to_process), max_workers)
 
 
 if __name__ == "__main__":
