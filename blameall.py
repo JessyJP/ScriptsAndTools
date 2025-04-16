@@ -223,12 +223,12 @@ def print_progress(current_file, files_scanned, total_files, overall_lines, over
 def parse_args():
     """
     Parse command-line arguments.
-    - paths: Optional list of files and/or directories to use as filters (positional).
+    - paths: Optional list of files and/or directories to filter the tracked files.
     - --filter (-f): Alternate option to supply a list of files and/or directories for filtering.
     - --ignore (-i): Optional list of file extension patterns to ignore.
-    - --root (-r): Optionally override the repository root.
+    - --root (-r): Override the repository root.
     - --list (-l): List all files that would be processed and exit.
-    - --parallel (-p): Process files using the parallel method.
+    - --parallel (-p): Process files using the parallel method with a specified number of threads (1-1024).
     """
     parser = argparse.ArgumentParser(
         description="Compute Git blame statistics for a Git repository."
@@ -263,8 +263,10 @@ def parse_args():
     )
     parser.add_argument(
         "-p", "--parallel",
-        action="store_true",
-        help="Process files using the parallel method."
+        metavar="N",
+        type=int,
+        default=None,
+        help="Process files using the parallel method with N threads (1-1024)."
     )
     return parser.parse_args()
 
