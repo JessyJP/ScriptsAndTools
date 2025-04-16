@@ -300,12 +300,16 @@ def main():
             print(f)
         sys.exit(0)
 
-    if args.parallel is None:
-        compute_blame_stats(list(files_to_process))
-    else:
-        max_workers = args.parallel if args.parallel > 0 else ((os.cpu_count() or 4) * 2)
+    if args.parallel is not None:
+        # Validate thread count
+        if 1 <= args.parallel <= 1024:
+            max_workers = args.parallel
+        else:
+            print(f"Invalid number of threads specified: {args.parallel}. Using default threads count.")
+            max_workers = (os.cpu_count() or 4) * 2
         compute_blame_stats_parallel(list(files_to_process), max_workers)
-
+    else:
+        compute_blame_stats(list(files_to_process))
 
 if __name__ == "__main__":
     main()
