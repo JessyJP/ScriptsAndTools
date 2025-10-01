@@ -1,4 +1,50 @@
 #!/usr/bin/env python3
+"""
+=============================================================
+ Git Blame Statistics Application
+=============================================================
+
+ Author:  JessyJP
+
+ Description:
+   This script analyzes Git repositories using `git blame` to
+   compute contribution statistics per author. It can be run
+   across the entire repository or filtered to specific files
+   or directories. The script supports both sequential and
+   parallel execution.
+
+ Features:
+   - Count lines attributed to each author.
+   - Track how many files each author has contributed to.
+   - Show number of uncommitted lines ("Not Committed Yet").
+   - Display live progress updates in the terminal.
+   - Optional parallel processing for speed on large repos.
+   - File filtering and extension ignoring supported.
+
+ Usage:
+   # Basic usage on entire repo
+   ./git_blame_stats.py
+
+   # Limit analysis to specific files or directories
+   ./git_blame_stats.py path/to/file1 path/to/dir2
+
+   # Ignore certain extensions (e.g., markdown & text files)
+   ./git_blame_stats.py -i .md .txt
+
+   # List files that would be processed, then exit
+   ./git_blame_stats.py --list
+
+   # Run in parallel using 8 threads
+   ./git_blame_stats.py --parallel 8
+
+ Notes:
+   - Must be run inside a Git repository.
+   - Requires Git to be installed and accessible in PATH.
+   - Handles Unicode safely by replacing invalid sequences.
+
+=============================================================
+"""
+
 import argparse
 import os
 import subprocess
