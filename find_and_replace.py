@@ -8,6 +8,19 @@ Description: Bulk find-and-replace utility for source files.
                -b, --begins   : Only process files whose names begin with a given string
                -e, --ends     : Only process files whose names end with a given string
                -c, --contains : Only process files whose names contain a given string
+
+Recommendations for a more comprehensive app can be found here: https://github.com/JessyJP/Replace-Text-In-Files 
+
+Also, please have a look at the standard Linux file & Text Processing Tools:
+- grep       → Search text in files.
+- sed        → Stream editor for inline text replacement.
+- awk        → Powerful text processing & reporting.
+- cut, sort, uniq → Common text manipulation.
+- less / more → File viewing.
+- find       → Locate files with conditions.
+- fd         → Modern replacement for find.
+- ripgrep (rg) → Modern, faster alternative to grep.
+
 """
 
 import os
