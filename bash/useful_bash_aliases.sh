@@ -55,6 +55,7 @@ alias usage='du -ch | grep total'  # Show disk usage in current directory
 alias totalusage='df -hl --total | grep total'  # Show total disk usage on machine
 alias partusage='df -hlT --exclude-type=tmpfs --exclude-type=devtmpfs'  # Show partition usages excluding temporary memory
 alias most='du -hsx * | sort -rh | head -10'  # Show top 10 largest files and directories
+alias lsl='find . -type l -printf "%p -> %l\n"'  # List all symlinks recursively in the current dir, showing "link -> target"
 
 # Calculator
 alias bc="bc -l"  # Use bc with math library
